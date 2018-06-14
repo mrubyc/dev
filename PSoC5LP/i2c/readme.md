@@ -54,7 +54,7 @@ i2c.write( ADRS_HDC1000, 0x02, 0x16, 0x00 )
 i2c.read( ADRS_HDC1000, 0x00 )
 sleep( 0.007 )
 s = i2c.read( ADRS_HDC1000, nil, 4 )
-t = to_uint16( s[0].ord, s[1].ord ).to_f / 65536 * 165 - 40
-h = to_uint16( s[2].ord, s[3].ord ).to_f / 65536 * 100
-s2 = sprintf( "t:%.2f h:%.0f", t, h );
+tmp = to_uint16( s[0].ord, s[1].ord ).to_f / 65536 * 165 - 40
+hum = to_uint16( s[2].ord, s[3].ord ).to_f / 65536 * 100
+s2 = sprintf( "t:%.2f h:%.0f", tmp, hum );
 ```
