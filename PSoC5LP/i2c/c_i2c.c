@@ -150,19 +150,19 @@ static void c_i2c_read(mrb_vm *vm, mrb_value v[], int argc)
     Get parameter
   */
   if( argc != 2 && argc != 3 ) goto ERROR_PARAM;
-  if( v[1].tt != MRB_TT_FIXNUM ) goto ERROR_PARAM;
+  if( v[1].tt != MRBC_TT_FIXNUM ) goto ERROR_PARAM;
   int i2c_adrs_7 = GET_INT_ARG(1);
 
   int device_register;
   switch( v[2].tt ) {
-  case MRB_TT_FIXNUM:	device_register = GET_INT_ARG(2);	break;
-  case MRB_TT_NIL:	device_register = -1;			break;
+  case MRBC_TT_FIXNUM:	device_register = GET_INT_ARG(2);	break;
+  case MRBC_TT_NIL:	device_register = -1;			break;
   default:		goto ERROR_PARAM;
   }
 
   int read_bytes = -1;
   if( argc == 3 ) {
-    if( v[3].tt != MRB_TT_FIXNUM ) goto ERROR_PARAM;
+    if( v[3].tt != MRBC_TT_FIXNUM ) goto ERROR_PARAM;
     read_bytes = GET_INT_ARG(3);
     buf = mrbc_alloc(vm, read_bytes + 1);
     if( !buf ) goto DONE;
@@ -253,20 +253,20 @@ static void c_i2c_write(mrb_vm *vm, mrb_value v[], int argc)
     Get parameter
   */
   if( argc < 2 ) goto ERROR_PARAM;
-  if( v[1].tt != MRB_TT_FIXNUM ) goto ERROR_PARAM;
+  if( v[1].tt != MRBC_TT_FIXNUM ) goto ERROR_PARAM;
   int i2c_adrs_7 = GET_INT_ARG(1);
 
   int device_register;
   switch( v[2].tt ) {
-  case MRB_TT_FIXNUM:	device_register = GET_INT_ARG(2);	break;
-  case MRB_TT_NIL:	device_register = -1;			break;
+  case MRBC_TT_FIXNUM:	device_register = GET_INT_ARG(2);	break;
+  case MRBC_TT_NIL:	device_register = -1;			break;
   default:		goto ERROR_PARAM;
   }
 
   int write_bytes = -1;
   const char *buf = NULL;
   if( argc >= 3 ) {
-    if( v[3].tt == MRB_TT_STRING ) {
+    if( v[3].tt == MRBC_TT_STRING ) {
       write_bytes = mrbc_string_size( &GET_ARG(3) );
       buf = mrbc_string_cstr( &GET_ARG(3) );
     } else {
@@ -301,7 +301,7 @@ static void c_i2c_write(mrb_vm *vm, mrb_value v[], int argc)
     if( buf ) {
       status = I2CNAME_MasterWriteByte( *buf++ );
     } else {
-      if( v[i+3].tt != MRB_TT_FIXNUM ) goto ERROR;
+      if( v[i+3].tt != MRBC_TT_FIXNUM ) goto ERROR;
       status = I2CNAME_MasterWriteByte( v[i+3].i );
     }
     if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
