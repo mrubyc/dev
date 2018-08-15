@@ -27,6 +27,7 @@ def to_int16( b1, b2 )
 end
 
 # initialize
+i2c = I2C.new()
 i2c.write( ADRS_LPS25H, 0x20, 0x90 )
 
 # read
@@ -48,6 +49,7 @@ def to_uint16( b1, b2 )
 end
 
 # initialize
+i2c = I2C.new()
 i2c.write( ADRS_HDC1000, 0x02, 0x16, 0x00 )
 
 # read
