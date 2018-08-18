@@ -11,8 +11,8 @@
   </pre>
 */
 
-#ifndef MRBC_I2C_PSOC_H_
-#define MRBC_I2C_PSOC_H_
+#ifndef MRBC_PSOC5LP_I2C_H_
+#define MRBC_PSOC5LP_I2C_H_
 
 #include "value.h"
 
