@@ -81,7 +81,7 @@ struct I2C_attr
 //================================================================
 /*! I2C constructor
 */
-static void c_i2c_new(mrb_vm *vm, mrb_value v[], int argc)
+static void c_i2c_new(struct VM *vm, mrb_value v[], int argc)
 {
   *v = mrbc_instance_new(vm, v->cls, sizeof(struct I2C_attr));
   struct I2C_attr *attr = (struct I2C_attr *)v->instance->data;
@@ -93,7 +93,7 @@ static void c_i2c_new(mrb_vm *vm, mrb_value v[], int argc)
 //================================================================
 /*! I2C get status
 */
-static void c_i2c_status(mrb_vm *vm, mrb_value v[], int argc)
+static void c_i2c_status(struct VM *vm, mrb_value v[], int argc)
 {
   struct I2C_attr *attr = (struct I2C_attr *)v->instance->data;
   int status = I2CNAME_MasterStatus();
@@ -105,7 +105,7 @@ static void c_i2c_status(mrb_vm *vm, mrb_value v[], int argc)
 //================================================================
 /*! I2C clear status
 */
-static void c_i2c_clear_status(mrb_vm *vm, mrb_value v[], int argc)
+static void c_i2c_clear_status(struct VM *vm, mrb_value v[], int argc)
 {
   struct I2C_attr *attr = (struct I2C_attr *)v->instance->data;
 
@@ -139,7 +139,7 @@ static void c_i2c_clear_status(mrb_vm *vm, mrb_value v[], int argc)
     A : Ack
     N : Nack
 */
-static void c_i2c_read(mrb_vm *vm, mrb_value v[], int argc)
+static void c_i2c_read(struct VM *vm, mrb_value v[], int argc)
 {
   struct I2C_attr *attr = (struct I2C_attr *)v->instance->data;
   uint32_t status = 0;
@@ -244,7 +244,7 @@ static void c_i2c_read(mrb_vm *vm, mrb_value v[], int argc)
     DR: device_register, option.
     A : Ack
 */
-static void c_i2c_write(mrb_vm *vm, mrb_value v[], int argc)
+static void c_i2c_write(struct VM *vm, mrb_value v[], int argc)
 {
   struct I2C_attr *attr = (struct I2C_attr *)v->instance->data;
   uint32_t status = 0;
