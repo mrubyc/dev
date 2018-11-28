@@ -119,21 +119,21 @@ static void c_i2c_clear_status(struct VM *vm, mrb_value v[], int argc)
 /*! I2C read (convenience function)
 
   (mruby usage)
-  s = i2c_read( i2c_adrs_7, device_register, read_bytes )
+  s = i2c.read( i2c_adrs_7, device_register, read_bytes )
   s[n].ord  # bytes
 
   #i2c_adrs_7 = Fixnum
   #device_register = Fixnum or nil
   #read_byres = Fixnum
 
-  (I2C Sequence, device_register specified.)
+  (I2C Sequence: device_register specified.)
   S - ADRS W (A) - DR (A) - Sr - ADRS R (A) - data1 (A)... datan (N) - P
 
-  (I2C Sequence, device_register not specified.)
-  S - ADRS R (A) - data1 (A)... datan (N) - P
+  (I2C Sequence: device_register not specified.)
+  S/Sr - ADRS R (A) - data1 (A)... datan (N) - P
 
-  (I2C Sequence, read_bytes not specified.)
-  S - ADRS R (A)
+  (I2C Sequence: device_register specified, read_bytes not specified.)
+  S - ADRS W (A) - DR (A)
 
     DR: device_register
     A : Ack
@@ -186,12 +186,12 @@ static void c_i2c_read(struct VM *vm, mrb_value v[], int argc)
   if( device_register >= 0 ) {
     status = I2CNAME_MasterWriteByte( device_register );	// specify register
     if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
-
+  }
+  if( read_bytes < 0 ) goto DONE;
+  if( device_register >= 0 ) {
     status = I2CNAME_MasterSendRestart( i2c_adrs_7, 1 );	// 1:read
     if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
   }
-
-  if( read_bytes < 0 ) goto DONE;
 
   // read data.
   uint8_t *p_buf = buf;
@@ -232,7 +232,7 @@ static void c_i2c_read(struct VM *vm, mrb_value v[], int argc)
 /*! I2C write (Convenience function)
 
   (mruby usage)
-  i2c_write( i2c_adrs_7, device_register, write_data, ... )
+  i2c.write( i2c_adrs_7, device_register, write_data, ... )
 
   #i2c_adrs_7 = Fixnum
   #device_register = Fixnum or nil
