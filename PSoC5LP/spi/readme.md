@@ -27,17 +27,17 @@
    8. Connect to SPIM_1's ss pin.
    9. Add following lines to the auto-generated "cyapicallbacks.h".
 ```
-	#define SPIM_1_TX_ISR_ENTRY_CALLBACK
-	void SPIM_1_TX_ISR_EntryCallback(void);
-	#define SPIM_1_RX_ISR_ENTRY_CALLBACK
-	void SPIM_1_RX_ISR_EntryCallback(void);
+#define SPIM_1_TX_ISR_ENTRY_CALLBACK
+void SPIM_1_TX_ISR_EntryCallback(void);
+#define SPIM_1_RX_ISR_ENTRY_CALLBACK
+void SPIM_1_RX_ISR_EntryCallback(void);
 ```
 
 ### More SPI devices?
 
-      Place the following SPI device and the Digital Output Pin connected to ss, and add the interrupt setting to “cyapicallbacks.h”.
+Place the following SPI device and the Digital Output Pin connected to ss, and add the interrupt setting to “cyapicallbacks.h”.
 
-      Define pre-processor macro MRBC_NUM_SPI=n. (n=1..3)
+Define pre-processor macro MRBC_NUM_SPI=n. (n=1..3)
 
 
 ### C program (main.c)
