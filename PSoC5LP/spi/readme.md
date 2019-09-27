@@ -54,7 +54,7 @@ mrbc_init_class_spi(0);
 # create object
 spi = SPI.new()	# first device
 spi = SPI.new(1)	# first device
-spi = SPI.new(2)	# secound device
+spi = SPI.new(2)	# second device
 
 # transfer (normally used)
 #  sending 0xf2 and then send 0x00 * 6bytes.
