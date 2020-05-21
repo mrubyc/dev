@@ -3,8 +3,8 @@
   I2C class for Cypress PSoC5LP
 
   <pre>
-  Copyright (C) 2018-2020 Kyushu Institute of Technology.
-  Copyright (C) 2018-2020 Shimane IT Open-Innovation Center.
+  Copyright (C) 2018 Kyushu Institute of Technology.
+  Copyright (C) 2018 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
@@ -28,7 +28,7 @@
 
     length = N              # read byte length
     res = i2c.read( ADRS, device_register, length )
-    res.getbyte(0); res.getbyte(1); ...
+    res[0].ord; res[1].ord; ...
 
     # convert byte array to uint16, int16 example.
     def to_uint16( b1, b2 )
@@ -37,9 +37,6 @@
     def to_int16( b1, b2 )
       return (b1 << 8 | b2) - ((b1 & 0x80) << 9)
     end
-
-  (see)
-    See the comments in each function header for more information.
 
   </pre>
 */
@@ -52,10 +49,8 @@
 #include "value.h"
 #include "alloc.h"
 #include "static.h"
-#include "symbol.h"
 #include "class.h"
 #include "c_string.h"
-#include "c_array.h"
 #include "console.h"
 
 
@@ -125,11 +120,11 @@ static void c_i2c_clear_status(struct VM *vm, mrb_value v[], int argc)
 
   (mruby usage)
   s = i2c.read( i2c_adrs_7, device_register, read_bytes )
-  s.getbyte(n)  # bytes
+  s[n].ord  # bytes
 
-  i2c_adrs_7 = Fixnum
-  device_register = Fixnum, Array<Fixnum> or nil
-  read_byres = Fixnum
+  #i2c_adrs_7 = Fixnum
+  #device_register = Fixnum or nil
+  #read_byres = Fixnum
 
   (I2C Sequence: device_register specified.)
   S - ADRS W (A) - DR (A) - Sr - ADRS R (A) - data1 (A)... datan (N) - P
@@ -158,11 +153,10 @@ static void c_i2c_read(struct VM *vm, mrb_value v[], int argc)
   if( v[1].tt != MRBC_TT_FIXNUM ) goto ERROR_PARAM;
   int i2c_adrs_7 = GET_INT_ARG(1);
 
-  mrbc_value *device_register;
+  int device_register;
   switch( v[2].tt ) {
-  case MRBC_TT_FIXNUM:
-  case MRBC_TT_ARRAY:	device_register = &v[2];	break;
-  case MRBC_TT_NIL:	device_register = NULL;		break;
+  case MRBC_TT_FIXNUM:	device_register = GET_INT_ARG(2);	break;
+  case MRBC_TT_NIL:	device_register = -1;			break;
   default:		goto ERROR_PARAM;
   }
 
@@ -174,42 +168,32 @@ static void c_i2c_read(struct VM *vm, mrb_value v[], int argc)
     if( !buf ) goto DONE;
   }
 
+
   /*
     Start I2C communication
   */
   // send START condition, slave address and R/W (1:read, 0:write)
   if( !attr->flag_transaction ) {
     I2CNAME_MasterClearStatus();
-    status = I2CNAME_MasterSendStart( i2c_adrs_7, (device_register == NULL));
+    status = I2CNAME_MasterSendStart( i2c_adrs_7, (device_register < 0));
   } else {
-    status = I2CNAME_MasterSendRestart( i2c_adrs_7, (device_register == NULL));
+    status = I2CNAME_MasterSendRestart( i2c_adrs_7, (device_register < 0));
   }
   if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
   attr->flag_transaction = 1;
 
   // send DEVICE REGISTER if specified.
-  if( device_register ) {
-    if( device_register->tt == MRBC_TT_FIXNUM ) {
-      status = I2CNAME_MasterWriteByte( device_register->i );
-      if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
-    } else {
-      int siz = mrbc_array_size( device_register );
-      int i;
-      for( i = 0; i < siz; i++ ) {
-	mrbc_value val1 = mrbc_array_get( device_register, i );
-	if( val1.tt != MRBC_TT_FIXNUM ) goto ERROR_PARAM;
-	status = I2CNAME_MasterWriteByte( val1.i );
-	if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
-      }
-    }
-
-    if( read_bytes <= 0 ) goto DONE;
-
+  if( device_register >= 0 ) {
+    status = I2CNAME_MasterWriteByte( device_register );	// specify register
+    if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
+  }
+  if( read_bytes < 0 ) goto DONE;
+  if( device_register >= 0 ) {
     status = I2CNAME_MasterSendRestart( i2c_adrs_7, 1 );	// 1:read
     if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
   }
 
-  // receive data.
+  // read data.
   uint8_t *p_buf = buf;
   for( int i = read_bytes - 1; i > 0; i-- ) {
     *p_buf++ = I2CNAME_MasterReadByte( I2CNAME_ACK_DATA );
@@ -248,12 +232,11 @@ static void c_i2c_read(struct VM *vm, mrb_value v[], int argc)
 /*! I2C write (Convenience function)
 
   (mruby usage)
-  i2c.write( i2c_adrs_7, device_register, write_data, ..., :no_stop )
+  i2c.write( i2c_adrs_7, device_register, write_data, ... )
 
-  i2c_adrs_7 = Fixnum
-  device_register = Fixnum, Array<Fixnum> or nil
-  write_data = String, or Fixnum...
-  :no_stop  if you don't need stop conditon, specify :no_stop.
+  #i2c_adrs_7 = Fixnum
+  #device_register = Fixnum or nil
+  #write_data = String, or Fixnum...
 
   (I2C Sequence)
   S - ADRS W (A) - DR (A) - data1 (A)... - P
@@ -273,31 +256,24 @@ static void c_i2c_write(struct VM *vm, mrb_value v[], int argc)
   if( v[1].tt != MRBC_TT_FIXNUM ) goto ERROR_PARAM;
   int i2c_adrs_7 = GET_INT_ARG(1);
 
-  mrbc_value *device_register;
+  int device_register;
   switch( v[2].tt ) {
-  case MRBC_TT_FIXNUM:
-  case MRBC_TT_ARRAY:	device_register = &v[2];	break;
-  case MRBC_TT_NIL:	device_register = NULL;		break;
+  case MRBC_TT_FIXNUM:	device_register = GET_INT_ARG(2);	break;
+  case MRBC_TT_NIL:	device_register = -1;			break;
   default:		goto ERROR_PARAM;
   }
 
   int write_bytes = -1;
-  const char *write_ptr = NULL;
-  int flag_no_stop = 0;
+  const char *buf = NULL;
   if( argc >= 3 ) {
-    if( v[argc].tt == MRBC_TT_SYMBOL &&
-	v[argc].i == str_to_symid("no_stop") ) {
-      flag_no_stop = 1;
-      argc--;
-    }
-
     if( v[3].tt == MRBC_TT_STRING ) {
       write_bytes = mrbc_string_size( &GET_ARG(3) );
-      write_ptr = mrbc_string_cstr( &GET_ARG(3) );
+      buf = mrbc_string_cstr( &GET_ARG(3) );
     } else {
       write_bytes = argc - 2;
     }
   }
+
 
   /*
     Start I2C communication
@@ -312,29 +288,18 @@ static void c_i2c_write(struct VM *vm, mrb_value v[], int argc)
   if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
   attr->flag_transaction = 1;
 
-  // send device register if specified.
-  if( device_register ) {
-    if( device_register->tt == MRBC_TT_FIXNUM ) {
-      status = I2CNAME_MasterWriteByte( device_register->i );
-      if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
-    } else {
-      int siz = mrbc_array_size( device_register );
-      int i;
-      for( i = 0; i < siz; i++ ) {
-	mrbc_value val1 = mrbc_array_get( device_register, i );
-	if( val1.tt != MRBC_TT_FIXNUM ) goto ERROR_PARAM;
-	status = I2CNAME_MasterWriteByte( val1.i );
-	if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
-      }
-    }
+  // send DEVICE REGISTER if specified.
+  if( device_register >= 0 ) {
+    status = I2CNAME_MasterWriteByte( device_register );
+    if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
   }
 
-  if( write_bytes < 0 ) goto STOP_COND;
+  if( write_bytes < 0 ) goto DONE;
 
-  // send data.
+  // write data.
   for( int i = 0; i < write_bytes; i++ ) {
-    if( write_ptr ) {
-      status = I2CNAME_MasterWriteByte( *write_ptr++ );
+    if( buf ) {
+      status = I2CNAME_MasterWriteByte( *buf++ );
     } else {
       if( v[i+3].tt != MRBC_TT_FIXNUM ) goto ERROR;
       status = I2CNAME_MasterWriteByte( v[i+3].i );
@@ -342,13 +307,11 @@ static void c_i2c_write(struct VM *vm, mrb_value v[], int argc)
     if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
   }
 
- STOP_COND:
-  if( !flag_no_stop ) {
-    // send STOP condition.
-    status = I2CNAME_MasterSendStop();
-    if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
-    attr->flag_transaction = 0;
-  }
+  // send STOP condition.
+  status = I2CNAME_MasterSendStop();
+  if( status != I2CNAME_MSTR_NO_ERROR ) goto ERROR;
+  attr->flag_transaction = 0;
+
   goto DONE;
 
 
