@@ -150,6 +150,39 @@ static void c_uart_read(mrbc_vm *vm, mrbc_value v[], int argc)
 
 
 //================================================================
+/*! read_nonblock
+
+  s = $uart.read_nonblock(maxlen)
+
+  @param  maxlen	Maximum receive length.
+  @return String	Received data.
+  @return Nil		No received data
+*/
+static void c_uart_read_nonblock(mrbc_vm *vm, mrbc_value v[], int argc)
+{
+  mrbc_value ret;
+  UART_HANDLE *handle = *(UART_HANDLE **)v->instance->data;
+  int max_length = GET_INT_ARG(1);
+
+  int len = uart_bytes_available(handle);
+  if( len == 0 ) {
+    ret = mrbc_nil_value();
+    goto DONE;
+  }
+
+  if( len > max_length ) len = max_length;
+
+  char *buf = mrbc_alloc( vm, len + 1 );
+  uart_read( handle, buf, len );
+
+  ret = mrbc_string_new_alloc( vm, buf, len );
+
+ DONE:
+  SET_RETURN(ret);
+}
+
+
+//================================================================
 /*! write
 
   $uart.write(s)
@@ -246,12 +279,13 @@ void mrbc_init_class_uart(struct VM *vm)
 
   // define class and methods.
   mrbc_class *uart;
-  uart = mrbc_define_class(0, "UART",	mrbc_class_object);
-  mrbc_define_method(0, uart, "new",	c_uart_new);
-  mrbc_define_method(0, uart, "read",	c_uart_read);
-  mrbc_define_method(0, uart, "write",	c_uart_write);
-  mrbc_define_method(0, uart, "gets",	c_uart_gets);
-  mrbc_define_method(0, uart, "puts",	c_uart_write);
+  uart = mrbc_define_class(0, "UART",		mrbc_class_object);
+  mrbc_define_method(0, uart, "new",		c_uart_new);
+  mrbc_define_method(0, uart, "read",		c_uart_read);
+  mrbc_define_method(0, uart, "read_nonblock",	c_uart_read_nonblock);
+  mrbc_define_method(0, uart, "write",		c_uart_write);
+  mrbc_define_method(0, uart, "gets",		c_uart_gets);
+  mrbc_define_method(0, uart, "puts",		c_uart_write);
   mrbc_define_method(0, uart, "clear_tx_buffer", c_uart_clear_tx_buffer);
   mrbc_define_method(0, uart, "clear_rx_buffer", c_uart_clear_rx_buffer);
 }
