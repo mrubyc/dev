@@ -15,7 +15,7 @@
    2. Open a configure dialog.
    3. Make sure the name is "UART_1".
    4. Set the baud rate and other parameters.
-   5. Change to the "Advanced" tab and check "RX - ON Byte Received" and "TX - On TX Complete".
+   5. Change to the "Advanced" tab and check "RX - ON Byte Received" and "TX - On FIFO Empty".
    6. Close this dialog.
    7. Place two "System > Interrupt" devices.
    8. Connect to tx_interrupt and rx_interrupt of UART.
@@ -46,7 +46,7 @@
     s = uart.read(n)    # read n bytes.
 
     # Binary write
-    uart.write("STRING\r\n")
+    uart.write("BINARY")
 
   </pre>
 */
@@ -135,6 +135,11 @@ static void c_uart_read(mrbc_vm *vm, mrbc_value v[], int argc)
   int need_length = GET_INT_ARG(1);
 
   if( uart_bytes_available(handle) < need_length ) {
+    if( uart_is_rx_overflow( handle ) ) {
+      console_print("UART Rx buffer overflow. resetting.\n");
+      uart_clear_rx_buffer( handle );
+    }
+
     ret = mrbc_nil_value();
     goto DONE;
   }
@@ -216,24 +221,27 @@ static void c_uart_write(mrbc_vm *vm, mrbc_value v[], int argc)
 */
 static void c_uart_gets(mrbc_vm *vm, mrbc_value v[], int argc)
 {
-  mrbc_value ret;
   UART_HANDLE *handle = *(UART_HANDLE **)v->instance->data;
 
-  if( !uart_can_read_line( handle ) ) {
-    ret = mrbc_nil_value();
-    goto DONE;
+  int len = uart_can_read_line(handle);
+  if( len == 0 ) goto NIL_RETURN;
+  if( len <  0 ) {
+    console_print("UART Rx buffer overflow. resetting.\n");
+    uart_clear_rx_buffer( handle );
+    goto NIL_RETURN;
   }
 
-  int len = uart_bytes_available( handle ) + 1;
-  char *buf = mrbc_alloc( vm, len );
+  char *buf = mrbc_alloc( vm, len+1 );
+  if( !buf ) goto NIL_RETURN;
 
-  len = uart_gets( handle, buf, len );
-  mrbc_realloc( vm, buf, len );
+  uart_read( handle, buf, len );
 
-  ret = mrbc_string_new_alloc( vm, buf, len );
-
- DONE:
+  mrbc_value ret = mrbc_string_new_alloc( vm, buf, len );
   SET_RETURN(ret);
+  return;
+
+ NIL_RETURN:
+  SET_NIL_RETURN();
 }
 
 

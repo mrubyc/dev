@@ -10,11 +10,11 @@
 ### Hardware configration.
 
 1. Use PSoC Creator, place "Communication > UART" device.
-2. Open a Configure dialog.
+2. Open a configure dialog.
 3. Make sure the name is "UART_1".
 4. Set the baud rate and other parameters.
-5. Change to the "Advanced" tab and check "RX - ON Byte Received" and "TX - On TX Complete".
-6. Click OK button to close dialog.
+5. Change to the "Advanced" tab and check "RX - ON Byte Received" and "TX - On FIFO Empty".
+6. Close this dialog.
 7. Place two "System > Interrupt" devices.
 8. Connect to tx_interrupt and rx_interrupt of UART.
 9. Change the names to "isr_UART_1_Tx" and "isr_UART_1_Rx" respectively.
@@ -43,10 +43,13 @@ s = uart.gets()
 uart.puts("STRING\r\n")  # alias for UART#write()
 
 # Binary read
-s = uart.read(n)    # read n bytes.
+s = uart.read(n)    # read n bytes or nil.
+
+# Nonblock Binary read
+s = uart.read_nonblock(n)
 
 # Binary write
-uart.write("STRING\r\n")
+uart.write("BINARY")
 
 # Flush buffer
 uart.clear_tx_buffer()
