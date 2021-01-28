@@ -3,8 +3,8 @@
   UART class for Cypress PSoC5LP
 
   <pre>
-  Copyright (C) 2018-2020 Kyushu Institute of Technology.
-  Copyright (C) 2018-2020 Shimane IT Open-Innovation Center.
+  Copyright (C) 2018-2021 Kyushu Institute of Technology.
+  Copyright (C) 2018-2021 Shimane IT Open-Innovation Center.
 
   This file is distributed under BSD 3-Clause License.
 
@@ -134,20 +134,31 @@ static void c_uart_read(mrbc_vm *vm, mrbc_value v[], int argc)
   UART_HANDLE *handle = *(UART_HANDLE **)v->instance->data;
   int need_length = GET_INT_ARG(1);
 
-  if( uart_bytes_available(handle) < need_length ) {
-    if( uart_is_rx_overflow( handle ) ) {
-      console_print("UART Rx buffer overflow. resetting.\n");
-      uart_clear_rx_buffer( handle );
-    }
+  if( uart_is_rx_overflow( handle ) ) {
+    console_print("UART Rx buffer overflow. resetting.\n");
+    uart_clear_rx_buffer( handle );
+    goto RETURN_NIL;
+  }
 
-    ret = mrbc_nil_value();
-    goto DONE;
+  if( uart_bytes_available(handle) < need_length ) {
+    goto RETURN_NIL;
   }
 
   char *buf = mrbc_alloc( vm, need_length + 1 );
-  uart_read( handle, buf, need_length );
+  if( !buf ) {
+    goto RETURN_NIL;
+  }
 
-  ret = mrbc_string_new_alloc( vm, buf, need_length );
+  int readed_length = uart_read( handle, buf, need_length );
+  if( readed_length < 0 ) {
+    goto RETURN_NIL;
+  }
+
+  ret = mrbc_string_new_alloc( vm, buf, readed_length );
+  goto DONE;
+
+ RETURN_NIL:
+  ret = mrbc_nil_value();
 
  DONE:
   SET_RETURN(ret);

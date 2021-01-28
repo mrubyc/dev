@@ -2,8 +2,8 @@
   @brief
   UART wrapper for PSoC5LP. Multi component version.
 
-  @version 1.2
-  @date 2020/09/05 16:20:25
+  @version 1.3
+  @date 2021/01/28 17:55:37
 
   <pre>
   Copyright (C) 2016-2020 Shimane IT Open-Innovation Center.
@@ -231,6 +231,8 @@ int uart_write(UART_HANDLE *uh, const void *buffer, size_t size)
 */
 int uart_read(UART_HANDLE *uh, void *buffer, size_t size)
 {
+  if( size == 0 ) return 0;
+
   // wait for data.
   while( !uart_is_readable(uh) ) {
     CyPmAltAct(PM_ALT_ACT_TIME_NONE, PM_ALT_ACT_SRC_PICU);
