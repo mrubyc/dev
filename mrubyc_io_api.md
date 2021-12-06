@@ -66,7 +66,7 @@ ADCが出力した整数値を、物理量（通常は電圧値）に変換し�
 val = adc1.read()		# val = 0.0 - 2.048 (Volt)
 ```
 
-### raw_read() -> Integer
+### rawread() -> Integer
 
 ADCが出力した整数値を返します。
 
