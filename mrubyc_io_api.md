@@ -59,11 +59,21 @@ adc1 = ADC.new( 1 )	# param: grove pin number.
 ## 入力
 ### read() -> Float
 
+ADCが出力した整数値を、物理量（通常は電圧値）に変換して返します。
+
 例 (mruby/c devkit 02)
 ```
-val = adc1.read()		# val = 0.0 - 2.048
+val = adc1.read()		# val = 0.0 - 2.048 (Volt)
 ```
 
+### rawread() -> Integer
+
+ADCが出力した整数値を返します。
+
+例 (mruby/c devkit 02 未実装)
+```
+val = adc1.raw_read()		# val = 0 - 2048
+```
 
 
 # シリアル通信 UART
