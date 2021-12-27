@@ -67,16 +67,17 @@
 # define MRBC_NUM_UART 1
 #endif
 
-UART_HANDLE uh[MRBC_NUM_UART];
+UART_HANDLE uh[MRBC_NUM_UART+1];
+UART_ISR( &uh[0], UART_0 );
 
 #if MRBC_NUM_UART >= 1	// use boost? the following are enough in this project.
-UART_ISR( &uh[0], UART_1 );
+UART_ISR( &uh[1], UART_1 );
 #endif
 #if MRBC_NUM_UART >= 2
-UART_ISR( &uh[1], UART_2 );
+UART_ISR( &uh[2], UART_2 );
 #endif
 #if MRBC_NUM_UART >= 3
-UART_ISR( &uh[2], UART_3 );
+UART_ISR( &uh[3], UART_3 );
 #endif
 #if MRBC_NUM_UART >= 4
 #error "MRBC_NUM_UART >= 4"
@@ -87,34 +88,30 @@ UART_ISR( &uh[2], UART_3 );
 //================================================================
 /*! UART constructor
 
-  $uart = UART.new		# automatic assign
+  $uart = UART.new		# default 1
   $uart = UART.new( num )	# 1 origin.
 */
 static void c_uart_new(mrbc_vm *vm, mrbc_value v[], int argc)
 {
-  static int uart_counter = 0;
-  int uart_num;
+  int uart_num = -1;
 
   if( argc == 0 ) {
-    uart_num = 0;
+    uart_num = 1;
   } else if( v[1].tt == MRBC_TT_FIXNUM ) {
     uart_num = v[1].i;
   } else {
     goto ERROR_RETURN;
   }
 
-  if( uart_num == 0 ) {
-    if( uart_counter >= MRBC_NUM_UART ) goto ERROR_RETURN;
-    uart_num = uart_counter++;
-  } else {
-    if( --uart_num >= MRBC_NUM_UART ) goto ERROR_RETURN;
-  }
+  if( uart_num < 0 ) goto ERROR_RETURN;
+  if( uart_num > MRBC_NUM_UART ) goto ERROR_RETURN;
 
   *v = mrbc_instance_new(vm, v->cls, sizeof(UART_HANDLE *));
   *((UART_HANDLE **)v->instance->data) = &uh[uart_num];
   return;
 
  ERROR_RETURN:
+  console_printf("UART: Illegal channel number specified.\n");
   SET_NIL_RETURN();
 }
 
@@ -286,14 +283,15 @@ static void c_uart_clear_rx_buffer(mrbc_vm *vm, mrbc_value v[], int argc)
 void mrbc_init_class_uart(struct VM *vm)
 {
   // start physical device
+  uart_init( &uh[0], UART_0 );
 #if MRBC_NUM_UART >= 1
-  uart_init( &uh[0], UART_1 );
+  uart_init( &uh[1], UART_1 );
 #endif
 #if MRBC_NUM_UART >= 2
-  uart_init( &uh[1], UART_2 );
+  uart_init( &uh[2], UART_2 );
 #endif
 #if MRBC_NUM_UART >= 3
-  uart_init( &uh[2], UART_3 );
+  uart_init( &uh[3], UART_3 );
 #endif
 
   // define class and methods.
